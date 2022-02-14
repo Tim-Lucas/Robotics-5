@@ -5,7 +5,7 @@
 
 YourPlanner::YourPlanner() :
   RrtConConBase(),
-  probability(static_cast<::rl::math::Real>(0.05)),
+  probability(static_cast<::rl::math::Real>(0.1)),
   randDistribution(0, 1),
   randEngine(::std::random_device()())
 {
@@ -26,22 +26,13 @@ YourPlanner::choose(::rl::math::Vector& chosen)
 {
   this->model->getDof();
   //your modifications here
-  
-  if (this->rand() > this->probability) {
-  	std::cout << "choose random" << std::endl;
-  	RrtConConBase::choose(chosen);
-  	
-  } else {
-  	//TODO: find out what tree we're currently extending --> goal depending on that
-  	chosen = *this->goal;
-  }
+  RrtConConBase::choose(chosen);
 }
 
 RrtConConBase::Vertex 
 YourPlanner::connect(Tree& tree, const Neighbor& nearest, const ::rl::math::Vector& chosen)
 {
   //your modifications here
-  std::cout << "connect" << std::endl;
   return RrtConConBase::connect(tree, nearest, chosen);
 }
 
@@ -56,9 +47,9 @@ bool
 YourPlanner::solve()
 {
   //your modifications here
-  return RrtConConBase::solve();
+  //return RrtConConBase::solve();
   
-  /**this->time = ::std::chrono::steady_clock::now();
+  this->time = ::std::chrono::steady_clock::now();
   
   // Define the roots of both trees
   this->begin[0] = this->addVertex(this->tree[0], ::std::make_shared< ::rl::math::Vector >(*this->start));
@@ -76,8 +67,16 @@ YourPlanner::solve()
     //then swap roles: first grow tree b and connect to a.
     for (::std::size_t j = 0; j < 2; ++j)
     {
-      //Sample a random configuration
-      this->choose(chosen);
+      
+      // RRT Goal Bias
+      if (this->rand() > this->probability) {
+      	 // Sample a random configuration with probability p
+      	 this->choose(chosen);
+  	
+      } else {
+         // Sample goal configuration with probability 1-p
+	 chosen = &this->tree[0] == a ? *this->goal : *this->start;
+      }
 
       //Find the nearest neighbour in the tree
       Neighbor aNearest = this->nearest(*a, chosen);
@@ -111,7 +110,7 @@ YourPlanner::solve()
 
   }
 
-  return false;**/
+  return false;
 }
 
 ::rl::math::Real
