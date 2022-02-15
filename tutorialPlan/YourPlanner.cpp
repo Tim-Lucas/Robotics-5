@@ -5,7 +5,7 @@
 
 YourPlanner::YourPlanner() :
   RrtConConBase(),
-  probability(static_cast<::rl::math::Real>(0.1)),
+  probability(static_cast<::rl::math::Real>(0.05)),
   randDistribution(0, 1),
   randEngine(::std::random_device()())
 {
@@ -22,11 +22,21 @@ YourPlanner::getName() const
 }
 
 void
-YourPlanner::choose(::rl::math::Vector& chosen)
+YourPlanner::choose(::rl::math::Vector& chosen, ::rl::math::Vector& goalBias)
 {
   this->model->getDof();
   //your modifications here
-  RrtConConBase::choose(chosen);
+  
+  // RRT Goal Bias
+  //if (this->rand() > this->probability) {
+  
+    // Sample a random configuration with probability p
+    RrtConConBase::choose(chosen);
+
+  /**} else {
+    chosen = goalBias;
+  }**/
+  
 }
 
 RrtConConBase::Vertex 
@@ -59,6 +69,7 @@ YourPlanner::solve()
   Tree* b = &this->tree[1];
 
   ::rl::math::Vector chosen(this->model->getDof());
+  ::rl::math::Vector goalBias(this->model->getDof());
 
 
   while ((::std::chrono::steady_clock::now() - this->time) < this->duration)
@@ -67,19 +78,16 @@ YourPlanner::solve()
     //then swap roles: first grow tree b and connect to a.
     for (::std::size_t j = 0; j < 2; ++j)
     {
-      
-      // RRT Goal Bias
-      if (this->rand() > this->probability) {
-      	 // Sample a random configuration with probability p
-      	 this->choose(chosen);
-  	
-      } else {
-         // Sample goal configuration with probability 1-p
-	 chosen = &this->tree[0] == a ? *this->goal : *this->start;
-      }
+      // get goal for goalBias
+      goalBias = &this->tree[0] == a ? *this->goal : *this->start;
 
-      //Find the nearest neighbour in the tree
-      Neighbor aNearest = this->nearest(*a, chosen);
+      Neighbor aNearest;
+      do
+      {
+	this->choose(chosen, goalBias);
+	aNearest = this->nearest(*a, chosen);
+      }
+      while (aNearest.second > (*a)[aNearest.first].R);
 
       //Do a CONNECT step from the nearest neighbour to the sample
       Vertex aConnected = this->connect(*a, aNearest, chosen);
@@ -87,6 +95,12 @@ YourPlanner::solve()
       //If a new node was inserted tree a
       if (NULL != aConnected)
       {
+      	// if expansion was successful, increase radius for nearest neighbor
+        if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
+	{
+	  (*a)[aNearest.first].R *= 1.05;
+	}
+	
         // Try a CONNECT step form the other tree to the sample
         Neighbor bNearest = this->nearest(*b, *(*a)[aConnected].q);
         Vertex bConnected = this->connect(*b, bNearest, *(*a)[aConnected].q);
@@ -101,6 +115,17 @@ YourPlanner::solve()
             return true;
           }
         }
+      } else {
+      	// if expansion failed, decrease radius of nearest neighbor node
+      	if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
+	{
+	  (*a)[aNearest.first].R *= (1 - 0.05);
+	  (*a)[aNearest.first].R = ::std::max(2.0, (*a)[aNearest.first].R);
+	}
+	else
+	{
+	  (*a)[aNearest.first].R = 20.0;
+	}
       }
 
       //Swap the roles of a and b
@@ -113,7 +138,7 @@ YourPlanner::solve()
   return false;
 }
 
-::rl::math::Real
+/**::rl::math::Real
 YourPlanner::getProbability() const
 {
     return this->probability;
@@ -123,7 +148,7 @@ void
 YourPlanner::setProbability(const ::rl::math::Real& probability)
 {
     this->probability = probability;
-}
+}**/
 
 ::std::uniform_real_distribution<::rl::math::Real>::result_type
 YourPlanner::rand()
