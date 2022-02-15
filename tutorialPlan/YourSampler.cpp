@@ -23,11 +23,13 @@ namespace rl
 
             ::rl::math::Real r = this->rand();
 
+            // Return goal configuration for the current tree with probability this->goal_prob
             if (r <= this->goal_prob)
             {
                 return *this->getGoal(index);
             }
 
+            // Otherwise return a randomly generated configuration
             for (::std::size_t i = 0; i < this->model->getDof(); ++i)
             {
                 rand(i) = this->rand();
@@ -63,6 +65,7 @@ namespace rl
 
         void YourSampler::setGoalBias(rl::math::Vector *goal_a, rl::math::Vector *goal_b, rl::math::Real prob)
         {
+            // Setting the goal configuration of the two trees a and b, as well as the probability of drawing it
             this->goal_a = goal_a;
             this->goal_b = goal_b;
             this->goal_prob = prob;
@@ -71,6 +74,7 @@ namespace rl
         rl::math::Vector *
         YourSampler::getGoal(int index)
         {
+            // Return the goal configuration for a given tree
             if (index == 0)
                 return this->goal_a;
             return this->goal_b;

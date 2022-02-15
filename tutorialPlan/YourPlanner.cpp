@@ -6,7 +6,6 @@
 
 YourPlanner::YourPlanner() : RrtConConBase()
 {
-
 }
 
 YourPlanner::~YourPlanner()
@@ -21,14 +20,14 @@ YourPlanner::getName() const
 
 void YourPlanner::choose(::rl::math::Vector &chosen, int index)
 {
-  this->model->getDof();
-  // your modifications here
+  // Generate a random configuration with goal bias towards current goal
   chosen = this->sampler->generate(index);
 }
 
 RrtConConBase::Neighbor
 YourPlanner::nearest(const Tree &tree, const ::rl::math::Vector &chosen, int index)
 {
+  // Finds the nearest neighbor of the chosen configuration, depending on the current tree
   ::std::vector<NearestNeighbors::Neighbor> neighbors;
   if (index == 0)
     neighbors = this->nearestNeighbors0->nearest(Metric::Value(&chosen, Vertex()), 1);
@@ -43,9 +42,12 @@ YourPlanner::addVertex(Tree &tree, const ::rl::plan::VectorPtr &q, int index)
   Vertex v = ::boost::add_vertex(tree);
   tree[v].index = ::boost::num_vertices(tree) - 1;
   tree[v].q = q;
-    tree[v].R = ::std::numeric_limits<::rl::math::Real>::max();
-    tree[v].fails = 0;
 
+  // Add radius and number of fails
+  tree[v].R = ::std::numeric_limits<::rl::math::Real>::max();
+  tree[v].fails = 0;
+
+  // Push Vertex to appropriate kd-tree
   if (index == 0)
   {
     this->nearestNeighbors0->push(Metric::Value(q.get(), v));
@@ -136,11 +138,12 @@ YourPlanner::connect(Tree &tree, const Neighbor &nearest, const ::rl::math::Vect
 
 bool YourPlanner::solve()
 {
-    this->sampler->setGoalBias(this->goal, this->start, 0.05);
+  // Initialize goal bias probability for the sampler
+  this->sampler->setGoalBias(this->goal, this->start, 0.05);
 
-    rl::plan::KdtreeNearestNeighbors nn0(this->model);
+  // Initialize structures for KD-Trees
+  rl::plan::KdtreeNearestNeighbors nn0(this->model);
   rl::plan::KdtreeNearestNeighbors nn1(this->model);
-
   this->nearestNeighbors0 = &nn0;
   this->nearestNeighbors1 = &nn1;
 
@@ -152,6 +155,7 @@ bool YourPlanner::solve()
   Tree *a = &this->tree[0];
   Tree *b = &this->tree[1];
 
+  // We use index_{a,b} to keep track of the currently expanded tree, to insert new configuration into the corresponding KD-tree
   int index_a = 0;
   int index_b = 1;
   ::rl::math::Vector chosen(this->model->getDof());
