@@ -87,7 +87,7 @@ YourPlanner::solve()
 	this->choose(chosen, goalBias);
 	aNearest = this->nearest(*a, chosen);
       }
-      while (aNearest.second > (*a)[aNearest.first].R);
+      while ((aNearest.second > (*a)[aNearest.first].R) && ((*a)[aNearest.first].fails < 10));
 
       //Do a CONNECT step from the nearest neighbour to the sample
       Vertex aConnected = this->connect(*a, aNearest, chosen);
@@ -98,7 +98,7 @@ YourPlanner::solve()
       	// if expansion was successful, increase radius for nearest neighbor
         if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
 	{
-	  (*a)[aNearest.first].R *= 1.05;
+	  (*a)[aNearest.first].R *= (1 + 0.05);
 	}
 	
         // Try a CONNECT step form the other tree to the sample
@@ -116,6 +116,8 @@ YourPlanner::solve()
           }
         }
       } else {
+      	(*a)[aNearest.first].fails += 1;
+      	
       	// if expansion failed, decrease radius of nearest neighbor node
       	if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
 	{
