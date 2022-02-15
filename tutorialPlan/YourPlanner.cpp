@@ -1,14 +1,12 @@
 #include "YourPlanner.h"
-#include <rl/plan/Sampler.h>
 #include <rl/plan/SimpleModel.h>
+#include <rl/plan/KdtreeNearestNeighbors.h>
+#include <rl/plan/Viewer.h>
 #include <iostream>
 
-YourPlanner::YourPlanner() :
-  RrtConConBase(),
-  probability(static_cast<::rl::math::Real>(0.05)),
-  randDistribution(0, 1),
-  randEngine(::std::random_device()())
+YourPlanner::YourPlanner() : RrtConConBase()
 {
+
 }
 
 YourPlanner::~YourPlanner()
@@ -21,93 +19,175 @@ YourPlanner::getName() const
   return "Your Planner";
 }
 
-void
-YourPlanner::choose(::rl::math::Vector& chosen, ::rl::math::Vector& goalBias)
+void YourPlanner::choose(::rl::math::Vector &chosen, int index)
 {
   this->model->getDof();
-  //your modifications here
-  
-  // RRT Goal Bias
-  //if (this->rand() > this->probability) {
-  
-    // Sample a random configuration with probability p
-    RrtConConBase::choose(chosen);
-
-  /**} else {
-    chosen = goalBias;
-  }**/
-  
+  // your modifications here
+  chosen = this->sampler->generate(index);
 }
 
-RrtConConBase::Vertex 
-YourPlanner::connect(Tree& tree, const Neighbor& nearest, const ::rl::math::Vector& chosen)
+RrtConConBase::Neighbor
+YourPlanner::nearest(const Tree &tree, const ::rl::math::Vector &chosen, int index)
 {
-  //your modifications here
-  return RrtConConBase::connect(tree, nearest, chosen);
+  ::std::vector<NearestNeighbors::Neighbor> neighbors;
+  if (index == 0)
+    neighbors = this->nearestNeighbors0->nearest(Metric::Value(&chosen, Vertex()), 1);
+  else
+    neighbors = this->nearestNeighbors1->nearest(Metric::Value(&chosen, Vertex()), 1);
+  return Neighbor(neighbors.front().second.second, this->model->inverseOfTransformedDistance(neighbors.front().first));
 }
 
-RrtConConBase::Vertex 
-YourPlanner::extend(Tree& tree, const Neighbor& nearest, const ::rl::math::Vector& chosen)
+RrtConConBase::Vertex
+YourPlanner::addVertex(Tree &tree, const ::rl::plan::VectorPtr &q, int index)
 {
-  //your modifications here
-  return RrtConConBase::extend(tree, nearest, chosen);
+  Vertex v = ::boost::add_vertex(tree);
+  tree[v].index = ::boost::num_vertices(tree) - 1;
+  tree[v].q = q;
+    tree[v].R = ::std::numeric_limits<::rl::math::Real>::max();
+    tree[v].fails = 0;
+
+  if (index == 0)
+  {
+    this->nearestNeighbors0->push(Metric::Value(q.get(), v));
+  }
+  else
+  {
+    this->nearestNeighbors1->push(Metric::Value(q.get(), v));
+  }
+
+  if (NULL != this->viewer)
+  {
+    this->viewer->drawConfigurationVertex(*tree[v].q);
+  }
+
+  return v;
 }
 
-bool
-YourPlanner::solve()
+RrtConConBase::Vertex
+YourPlanner::connect(Tree &tree, const Neighbor &nearest, const ::rl::math::Vector &chosen, int index)
 {
-  //your modifications here
-  //return RrtConConBase::solve();
-  
+  // Do first extend step
+
+  ::rl::math::Real distance = nearest.second;
+  ::rl::math::Real step = distance;
+
+  bool reached = false;
+
+  if (step <= this->delta)
+  {
+    reached = true;
+  }
+  else
+  {
+    step = this->delta;
+  }
+
+  ::rl::plan::VectorPtr last = ::std::make_shared<::rl::math::Vector>(this->model->getDof());
+
+  // move "last" along the line q<->chosen by distance "step / distance"
+  this->model->interpolate(*tree[nearest.first].q, chosen, step / distance, *last);
+
+  this->model->setPosition(*last);
+  this->model->updateFrames();
+
+  if (this->model->isColliding())
+  {
+    return NULL;
+  }
+
+  ::rl::math::Vector next(this->model->getDof());
+
+  while (!reached)
+  {
+    // Do further extend step
+
+    distance = this->model->distance(*last, chosen);
+    step = distance;
+
+    if (step <= this->delta)
+    {
+      reached = true;
+    }
+    else
+    {
+      step = this->delta;
+    }
+
+    // move "next" along the line last<->chosen by distance "step / distance"
+    this->model->interpolate(*last, chosen, step / distance, next);
+
+    this->model->setPosition(next);
+    this->model->updateFrames();
+
+    if (this->model->isColliding())
+    {
+      break;
+    }
+
+    *last = next;
+  }
+
+  // "last" now points to the vertex where the connect step collided with the environment.
+  // Add it to the tree
+  Vertex connected = this->addVertex(tree, last, index);
+  this->addEdge(nearest.first, connected, tree);
+  return connected;
+}
+
+bool YourPlanner::solve()
+{
+    this->sampler->setGoalBias(this->goal, this->start, 0.05);
+
+    rl::plan::KdtreeNearestNeighbors nn0(this->model);
+  rl::plan::KdtreeNearestNeighbors nn1(this->model);
+
+  this->nearestNeighbors0 = &nn0;
+  this->nearestNeighbors1 = &nn1;
+
   this->time = ::std::chrono::steady_clock::now();
-  
   // Define the roots of both trees
-  this->begin[0] = this->addVertex(this->tree[0], ::std::make_shared< ::rl::math::Vector >(*this->start));
-  this->begin[1] = this->addVertex(this->tree[1], ::std::make_shared< ::rl::math::Vector >(*this->goal));
+  this->begin[0] = this->addVertex(this->tree[0], ::std::make_shared<::rl::math::Vector>(*this->start), 0);
+  this->begin[1] = this->addVertex(this->tree[1], ::std::make_shared<::rl::math::Vector>(*this->goal), 1);
 
-  Tree* a = &this->tree[0];
-  Tree* b = &this->tree[1];
+  Tree *a = &this->tree[0];
+  Tree *b = &this->tree[1];
 
+  int index_a = 0;
+  int index_b = 1;
   ::rl::math::Vector chosen(this->model->getDof());
-  ::rl::math::Vector goalBias(this->model->getDof());
-
 
   while ((::std::chrono::steady_clock::now() - this->time) < this->duration)
   {
-    //First grow tree a and then try to connect b.
-    //then swap roles: first grow tree b and connect to a.
+    // First grow tree a and then try to connect b.
+    // then swap roles: first grow tree b and connect to a.
     for (::std::size_t j = 0; j < 2; ++j)
     {
-      // get goal for goalBias
-      goalBias = &this->tree[0] == a ? *this->goal : *this->start;
-
       Neighbor aNearest;
       do
       {
-	this->choose(chosen, goalBias);
-	aNearest = this->nearest(*a, chosen);
-      }
-      while ((aNearest.second > (*a)[aNearest.first].R) && ((*a)[aNearest.first].fails < 10));
+        this->choose(chosen, index_a);
+        aNearest = this->nearest(*a, chosen, index_a);
+      } while ((aNearest.second > (*a)[aNearest.first].R) && ((*a)[aNearest.first].fails < 10));
 
-      //Do a CONNECT step from the nearest neighbour to the sample
-      Vertex aConnected = this->connect(*a, aNearest, chosen);
+      // Do a CONNECT step from the nearest neighbour to the sample
+      Vertex aConnected = this->connect(*a, aNearest, chosen, index_a);
 
-      //If a new node was inserted tree a
+      // If a new node was inserted tree a
       if (NULL != aConnected)
       {
-      	// if expansion was successful, increase radius for nearest neighbor
+        // if expansion was successful, increase radius for nearest neighbor
         if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
-	{
-	  (*a)[aNearest.first].R *= (1 + 0.05);
-	}
-	
+        {
+          (*a)[aNearest.first].R *= (1 + 0.05);
+        }
+
         // Try a CONNECT step form the other tree to the sample
-        Neighbor bNearest = this->nearest(*b, *(*a)[aConnected].q);
-        Vertex bConnected = this->connect(*b, bNearest, *(*a)[aConnected].q);
+        Neighbor bNearest = this->nearest(*b, *(*a)[aConnected].q, index_b);
+        Vertex bConnected = this->connect(*b, bNearest, *(*a)[aConnected].q, index_b);
 
         if (NULL != bConnected)
         {
-          //Test if we could connect both trees with each other
+          // Test if we could connect both trees with each other
           if (this->areEqual(*(*a)[aConnected].q, *(*b)[bConnected].q))
           {
             this->end[0] = &this->tree[0] == a ? aConnected : bConnected;
@@ -115,52 +195,27 @@ YourPlanner::solve()
             return true;
           }
         }
-      } else {
-      	(*a)[aNearest.first].fails += 1;
-      	
-      	// if expansion failed, decrease radius of nearest neighbor node
-      	if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
-	{
-	  (*a)[aNearest.first].R *= (1 - 0.05);
-	  (*a)[aNearest.first].R = ::std::max(2.0, (*a)[aNearest.first].R);
-	}
-	else
-	{
-	  (*a)[aNearest.first].R = 20.0;
-	}
       }
+      else
+      {
+        (*a)[aNearest.first].fails += 1;
 
-      //Swap the roles of a and b
+        // if expansion failed, decrease radius of nearest neighbor node
+        if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
+        {
+          (*a)[aNearest.first].R *= (1 - 0.05);
+          (*a)[aNearest.first].R = ::std::max(2.0, (*a)[aNearest.first].R);
+        }
+        else
+        {
+          (*a)[aNearest.first].R = 20.0;
+        }
+      }
+      // Swap the roles of a and b
       using ::std::swap;
       swap(a, b);
+      swap(index_a, index_b);
     }
-
   }
-
   return false;
 }
-
-/**::rl::math::Real
-YourPlanner::getProbability() const
-{
-    return this->probability;
-}
-
-void
-YourPlanner::setProbability(const ::rl::math::Real& probability)
-{
-    this->probability = probability;
-}**/
-
-::std::uniform_real_distribution<::rl::math::Real>::result_type
-YourPlanner::rand()
-{
-	return this->randDistribution(this->randEngine);
-}
-
-void
-YourPlanner::seed(const ::std::mt19937::result_type& value)
-{
-	this->randEngine.seed(value);
-}
-

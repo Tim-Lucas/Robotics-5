@@ -24,14 +24,6 @@ public:
 
   virtual ::std::string getName() const;
 
-  virtual void seed(const ::std::mt19937::result_type &value);
-
-  /**::rl::math::Real getProbability() const;
-
-  void setProbability(const ::rl::math::Real& probability);**/
-
-  ::rl::math::Real probability;
-
   bool solve();
 
   YourSampler *sampler;

@@ -21,9 +21,8 @@ namespace rl
             ::rl::math::Vector generate();
             ::rl::math::Vector generate(int index);
 
-
             virtual void seed(const ::std::mt19937::result_type &value);
-            void setGoalBias(rl::math::Vector *goal_a,rl::math::Vector *goal_b, rl::math::Real prob);
+            void setGoalBias(rl::math::Vector *goal_a, rl::math::Vector *goal_b, rl::math::Real prob);
             rl::math::Vector *getGoal(int index);
 
         protected:
@@ -34,8 +33,8 @@ namespace rl
             ::std::mt19937 randEngine;
 
         private:
-            rl::math::Vector *goal_a;   // goal configuration for tree a
-            rl::math::Vector *goal_b;  //goal configuration for tree b
+            rl::math::Vector *goal_a; // goal configuration for tree a
+            rl::math::Vector *goal_b; // goal configuration for tree b
             rl::math::Real goal_prob; // probability of drawing goal configuration
         };
     }

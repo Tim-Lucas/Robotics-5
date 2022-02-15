@@ -69,10 +69,12 @@ namespace rl
         }
 
         rl::math::Vector *
-        YourSampler::getGoal(int index) { if (index == 0) return this->goal_a;
-        return this->goal_b;}
-
-
+        YourSampler::getGoal(int index)
+        {
+            if (index == 0)
+                return this->goal_a;
+            return this->goal_b;
+        }
 
     }
 }
