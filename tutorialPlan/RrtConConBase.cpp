@@ -64,12 +64,14 @@ RrtConConBase::addVertex(Tree& tree, const ::rl::plan::VectorPtr& q)
   Vertex v = ::boost::add_vertex(tree);
   tree[v].index = ::boost::num_vertices(tree) - 1;
   tree[v].q = q;
+  tree[v].R = ::std::numeric_limits<::rl::math::Real>::max();
+  tree[v].fails = 0;
 
   if (NULL != this->viewer)
   {
     this->viewer->drawConfigurationVertex(*tree[v].q);
   }
-
+  
   return v;
 }
 
