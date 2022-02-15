@@ -6,10 +6,6 @@
 
 YourPlanner::YourPlanner() : RrtConConBase()
 {
-
-    //    this->nearestNeighbors1 = rl::plan::KdtreeNearestNeighbors(this->model);
-    // Rrt::setNearestNeighbors(&nearestNeighbors0, 0);
-    // this->Planner.setNearestNeighbors(&nearestNeighbors1, 1);
 }
 
 YourPlanner::~YourPlanner()
@@ -30,19 +26,6 @@ void YourPlanner::choose(::rl::math::Vector &chosen, int index)
     chosen = this->sampler->generate(index);
 }
 
-// RrtConConBase::Vertex
-// YourPlanner::connect(Tree &tree, const Neighbor &nearest, const ::rl::math::Vector &chosen)
-//{
-//   // your modifications here
-//   return RrtConConBase::connect(tree, nearest, chosen);
-// }
-//
-// RrtConConBase::Vertex
-// YourPlanner::extend(Tree &tree, const Neighbor &nearest, const ::rl::math::Vector &chosen)
-//{
-//   // your modifications here
-//   return RrtConConBase::extend(tree, nearest, chosen);
-// }
 RrtConConBase::Neighbor
 YourPlanner::nearest(const Tree &tree, const ::rl::math::Vector &chosen, int index)
 {
@@ -64,8 +47,6 @@ YourPlanner::addVertex(Tree &tree, const ::rl::plan::VectorPtr &q, int index)
     if (index == 0)
     {
         this->nearestNeighbors0->push(Metric::Value(q.get(), v));
-        ::std::size_t check = this->nearestNeighbors0->size();
-        std::cout << check << std::endl;
     }
     else
     {
