@@ -33,7 +33,4 @@
 *.app
 
 tutorialPlan/.idea/
-/build/
-tutorialPlan/Modules/
-tutorialPlan/qt_visualization/
-tutorialPlan/xml/
+tutorialPlan/build/
