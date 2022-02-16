@@ -23,7 +23,9 @@ void YourPlanner::choose(::rl::math::Vector &chosen, int index)
 {
   this->model->getDof();
   // your modifications here
-  chosen = this->sampler->generate(index);
+  // chosen = this->sampler->generate(index);
+  chosen = this->sampler->generateGaussian(index);
+
 }
 
 RrtConConBase::Neighbor

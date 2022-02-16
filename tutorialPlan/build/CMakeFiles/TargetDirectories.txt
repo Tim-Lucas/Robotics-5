@@ -1,4 +1,4 @@
-/home/student/Documents/Robotics-5/tutorialPlan/build/CMakeFiles/edit_cache.dir
-/home/student/Documents/Robotics-5/tutorialPlan/build/CMakeFiles/rebuild_cache.dir
-/home/student/Documents/Robotics-5/tutorialPlan/build/CMakeFiles/tutorialPlan.dir
-/home/student/Documents/Robotics-5/tutorialPlan/build/CMakeFiles/tutorialPlan_autogen.dir
+/home/mariusz/Documents/GitHub/Robotics-5/tutorialPlan/build/CMakeFiles/tutorialPlan.dir
+/home/mariusz/Documents/GitHub/Robotics-5/tutorialPlan/build/CMakeFiles/edit_cache.dir
+/home/mariusz/Documents/GitHub/Robotics-5/tutorialPlan/build/CMakeFiles/rebuild_cache.dir
+/home/mariusz/Documents/GitHub/Robotics-5/tutorialPlan/build/CMakeFiles/tutorialPlan_autogen.dir
