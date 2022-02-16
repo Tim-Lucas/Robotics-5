@@ -33,4 +33,4 @@
 *.app
 
 tutorialPlan/.idea/
-tutorialPlan/build/
+*/build/
