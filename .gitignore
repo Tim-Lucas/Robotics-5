@@ -33,3 +33,7 @@
 *.app
 
 /.idea
+/build
+/Modules
+/qt_visualization
+/xml
