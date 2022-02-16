@@ -20,10 +20,15 @@ namespace rl
 
             ::rl::math::Vector generate();
             ::rl::math::Vector generate(int index);
+            ::rl::math::Vector generateGaussian();
+            ::rl::math::Vector generateBridge();
 
             virtual void seed(const ::std::mt19937::result_type &value);
             void setGoalBias(rl::math::Vector *goal_a, rl::math::Vector *goal_b, rl::math::Real prob);
             rl::math::Vector *getGoal(int index);
+
+            /** Probability of choosing bridge sample. */
+			::rl::math::Real ratio;
 
         protected:
             ::std::uniform_real_distribution<::rl::math::Real>::result_type rand();
@@ -31,6 +36,12 @@ namespace rl
             ::std::uniform_real_distribution<::rl::math::Real> randDistribution;
 
             ::std::mt19937 randEngine;
+
+            ::std::uniform_real_distribution<::rl::math::Real>::result_type gauss();
+
+            ::std::uniform_real_distribution<::rl::math::Real> gaussDistribution;
+
+            ::std::mt19937 gaussEngine;
 
         private:
             rl::math::Vector *goal_a; // goal configuration for tree a
