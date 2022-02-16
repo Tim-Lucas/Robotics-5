@@ -33,7 +33,7 @@
 *.app
 
 /.idea
-tutorialPlan/build
+tutorialPlan/build/**
 /Modules
 /qt_visualization
 /xml
