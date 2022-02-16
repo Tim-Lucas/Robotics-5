@@ -32,8 +32,8 @@
 *.out
 *.app
 
-tutorialPlan/.idea
-tutorialPlan/build
-tutorialPlan/Modules
-tutorialPlan/qt_visualization
-tutorialPlan/xml
+tutorialPlan/.idea/
+tutorialPlan/build/
+tutorialPlan/Modules/
+tutorialPlan/qt_visualization/
+tutorialPlan/xml/
