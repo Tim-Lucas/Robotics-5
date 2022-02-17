@@ -87,7 +87,7 @@ YourPlanner::solve()
 	this->choose(chosen, goalBias);
 	aNearest = this->nearest(*a, chosen);
       }
-      while ((aNearest.second > (*a)[aNearest.first].R) && ((*a)[aNearest.first].fails < 10));
+      while ((aNearest.second > (*a)[aNearest.first].R) && ((*a)[aNearest.first].fails > 15));
 
       //Do a CONNECT step from the nearest neighbour to the sample
       Vertex aConnected = this->connect(*a, aNearest, chosen);
@@ -139,18 +139,6 @@ YourPlanner::solve()
 
   return false;
 }
-
-/**::rl::math::Real
-YourPlanner::getProbability() const
-{
-    return this->probability;
-}
-
-void
-YourPlanner::setProbability(const ::rl::math::Real& probability)
-{
-    this->probability = probability;
-}**/
 
 ::std::uniform_real_distribution<::rl::math::Real>::result_type
 YourPlanner::rand()
