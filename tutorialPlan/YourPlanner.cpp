@@ -139,7 +139,7 @@ YourPlanner::connect(Tree &tree, const Neighbor &nearest, const ::rl::math::Vect
 bool YourPlanner::solve()
 {
   // Initialize goal bias probability for the sampler
-  this->sampler->setGoalBias(this->goal, this->start, 0.3);
+  this->sampler->setGoalBias(this->goal, this->start, 0.05);
 
   // Initialize structures for KD-Trees
   rl::plan::KdtreeNearestNeighbors nn0(this->model);
