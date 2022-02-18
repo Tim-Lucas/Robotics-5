@@ -139,7 +139,7 @@ YourPlanner::connect(Tree &tree, const Neighbor &nearest, const ::rl::math::Vect
 bool YourPlanner::solve()
 {
   // Initialize goal bias probability for the sampler
-  this->sampler->setGoalBias(this->goal, this->start, 0.05);
+  this->sampler->setGoalBias(this->goal, this->start, 0.3);
 
   // Initialize structures for KD-Trees
   rl::plan::KdtreeNearestNeighbors nn0(this->model);
@@ -148,6 +148,7 @@ bool YourPlanner::solve()
   this->nearestNeighbors1 = &nn1;
 
   this->time = ::std::chrono::steady_clock::now();
+  
   // Define the roots of both trees
   this->begin[0] = this->addVertex(this->tree[0], ::std::make_shared<::rl::math::Vector>(*this->start), 0);
   this->begin[1] = this->addVertex(this->tree[1], ::std::make_shared<::rl::math::Vector>(*this->goal), 1);
@@ -166,12 +167,14 @@ bool YourPlanner::solve()
     // then swap roles: first grow tree b and connect to a.
     for (::std::size_t j = 0; j < 2; ++j)
     {
+      // Sample new configuration and select nearest neighbor as long as
+      // dist(chosen, nearest) > radius of nearest neighbor or neighbor is exhausted node
       Neighbor aNearest;
       do
       {
         this->choose(chosen, index_a);
         aNearest = this->nearest(*a, chosen, index_a);
-      } while ((aNearest.second > (*a)[aNearest.first].R) && ((*a)[aNearest.first].fails < 10));
+      } while (aNearest.second > (*a)[aNearest.first].R || (*a)[aNearest.first].fails > 30);
 
       // Do a CONNECT step from the nearest neighbour to the sample
       Vertex aConnected = this->connect(*a, aNearest, chosen, index_a);
@@ -202,16 +205,19 @@ bool YourPlanner::solve()
       }
       else
       {
+        // if expansion failed, increment fails counter for that vertex
         (*a)[aNearest.first].fails += 1;
 
-        // if expansion failed, decrease radius of nearest neighbor node
+        // and decrease its radius
         if ((*a)[aNearest.first].R < ::std::numeric_limits<::rl::math::Real>::max())
         {
+          //if radius has already been decreased before, decrement it by factor 0.95
           (*a)[aNearest.first].R *= (1 - 0.05);
-          (*a)[aNearest.first].R = ::std::max(2.0, (*a)[aNearest.first].R);
+          (*a)[aNearest.first].R = ::std::max(2.0, (*a)[aNearest.first].R);             //radius is minimum 2.0
         }
         else
         {
+          // if radius is infinite, set it to 20.0
           (*a)[aNearest.first].R = 20.0;
         }
       }

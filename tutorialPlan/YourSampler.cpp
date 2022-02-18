@@ -10,7 +10,7 @@ namespace rl
                                      randDistribution(0, 1),
                                      randEngine(::std::random_device()()),
                                      gaussDistribution(0, 1),
-			                               gaussEngine(::std::random_device()()),
+			              gaussEngine(::std::random_device()()),
                                      ratio(static_cast<::rl::math::Real>(5) / static_cast<::rl::math::Real>(6))
         {
         }
@@ -31,8 +31,8 @@ namespace rl
             }
 
             //Otherwise return a gaussian generated configuration
-          
             return this->generateGaussian(); // Gaussian sampling
+            
             // return this->generateBridge(); // Bridge sampling
         }
 

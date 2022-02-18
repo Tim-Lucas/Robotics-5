@@ -29,6 +29,7 @@ public:
   YourSampler *sampler;
 
   rl::plan::KdtreeNearestNeighbors *nearestNeighbors0;
+  
   rl::plan::KdtreeNearestNeighbors *nearestNeighbors1;
 
 protected:
