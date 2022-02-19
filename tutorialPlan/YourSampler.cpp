@@ -30,10 +30,11 @@ namespace rl
                 return *this->getGoal(index);
             }
 
-            //Otherwise return a gaussian generated configuration
+            // Otherwise return a gaussian generated configuration
             return this->generateGaussian(); // Gaussian sampling
             
-            // return this->generateBridge(); // Bridge sampling
+            // Bridge Sampler
+            // return this->generateBridge(); 
         }
 
         ::rl::math::Vector
@@ -86,10 +87,13 @@ namespace rl
             return this->goal_b;
         }
 
-        // Gaussian sampling
+        /*  Gaussian Sampler
+            We have used and slightly modified the robotics library https://github.com/roboticslibrary/rl/blob/master/src/rl/plan/GaussianSampler.cpp for the function below.
+        */
         ::rl::math::Vector
         YourSampler::generateGaussian() {
 
+          // Assign sigma value for gaussian distribution sampling
           ::rl::math::Vector sigma(this->model->getDof());
           for (::std::size_t i = 0; i < this->model->getDof(); ++i) {
             sigma(i) = 1.;
@@ -127,7 +131,9 @@ namespace rl
           }
         }
 
-        // Bridge sampling
+        /*  Bridge Sampler
+            We have used as basis and slightly modified the robotics library https://github.com/roboticslibrary/rl/blob/master/src/rl/plan/BridgeSampler.cpp for the function below.
+        */
         ::rl::math::Vector
         YourSampler::generateBridge()
         {
@@ -139,6 +145,7 @@ namespace rl
           ::rl::math::Vector q(this->model->getDof());
           ::rl::math::Vector gauss(this->model->getDof());
           
+          // Assign sigma value for gaussian distribution sampling
           ::rl::math::Vector sigma(this->model->getDof());
           for (::std::size_t i = 0; i < this->model->getDof(); ++i) {
             sigma(i) = 0.6;
